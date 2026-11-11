@@ -32,14 +32,14 @@
 
 ## 标签
 
-`tags` 输出 1–6 个字符串。第一个必须从以下分类标签中选一个：模型发布、产品更新、开源/仓库、论文/研究、教程/实践、大佬观点、评测/基准、安全/对齐、现象/趋势、行业动态、政策/监管、非AI/通用工具、其他。
+`tags` 输出 1–6 个字符串。第一个必须从以下分类标签中选一个：协议升级、产品更新、研报/研究、安全/预警、融资/并购、政策/监管、大佬观点、教程/实践、现象/趋势、开源/仓库、评测/数据、其他。
 
 其后可选 0–5 个适用标签，并且只能来自以下两个白名单：
 
-- 主题：Agent、编码、推理、多模态、语音、视频、图像生成、RAG、端侧、数据/训练、搜索、部署/工程、开源生态、具身智能、MCP/工具调用
-- 实体：OpenAI、Anthropic、DeepSeek、DeepMind、Google、Meta、Microsoft、xAI、Hugging Face、GitHub、arXiv
+- 主题：以太坊、Solana、Bitcoin、Layer2、Layer3、Rollup、DeFi、DEX、借贷、Restaking、稳定币、RWA、AI+Crypto、DePIN、链游/GameFi、NFT、跨链、ZK/零知识证明、MEV、模块化区块链、代币经济
+- 实体：以太坊基金会、Solana、Uniswap、Aave、MakerDAO、Arbitrum、Optimism、Polygon、Binance、Coinbase、Tether、Circle、Paradigm、a16z crypto、SlowMist、Vitalik
 
-正文中即使明确出现了 NVIDIA、Apple、阿里等其他实体，也不要把它们放进 `tags`。不要创造白名单之外的标签。没有适用的主题或实体时，只返回第一个分类标签；例如学校限制 AI 使用的监管新闻，不需要强行归到“编码”或“推理”。
+正文中即使明确出现了其他实体，也不要把它们放进 `tags`。不要创造白名单之外的标签。没有适用的主题或实体时，只返回第一个分类标签。
 
 ## 候选阅读价值
 

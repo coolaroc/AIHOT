@@ -165,6 +165,8 @@ export interface RequestNotices {
 export interface ServerModule {
   /** Its folder under modules/. */
   name: string;
+  /** Explicitly trusted editorial source IDs whose selection is decided by their publisher, never by a T1 label. */
+  trustedEditorialSources?: readonly string[];
   /** Sources whose selected articles keep independent cards/seats without changing admission or event identity (publication/rules.ts, scope.ts). */
   independentSelectedSources?: readonly string[];
   /** Another account of an independent source's author, by source id: its post gives way to the article on the same news (events/cards.ts). */

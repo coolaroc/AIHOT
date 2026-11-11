@@ -70,6 +70,8 @@ try {
   // These reads are valid on a fresh site: an empty result set is still a successful public answer.
   await call(T.latest, { limit: 2 });
   await call(T.search, { q: "OpenAI", limit: 2 });
+  await call(T.search, { q: "Ethereum", window: "all", limit: 2 });
+  await call(T.item, { id: "__mcp_check_missing__" }, { error: true, code: "not_found" });
   await call(T.hot, { limit: 3 });
   for (const tool of moduleTools) {
     if ((await tool.input.safeParseAsync({})).success) await call(tool.name, {});

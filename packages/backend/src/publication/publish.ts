@@ -13,7 +13,8 @@ import { pickRepresentative, REPRESENTATIVE_COLUMNS, type RepresentativeIdentity
 import { enqueue, QUEUES, shutdownSignal } from "../jobs/queue.ts";
 import { emit } from "../modules.ts";
 import {
-  bodyModeOf, channelOf, displayTags, isIndexable, isPoolEligible, isSelectable, isIndependentSelectedSource, mayRedistribute, publicSourceName, type SourceFacts,
+  bodyModeOf, channelOf, displayTags, isIndexable, isPoolEligible, isSelectable, isIndependentSelectedSource,
+  isOfficialEditorialSource, mayRedistribute, publicSourceName, type SourceFacts,
 } from "./rules.ts";
 import { foldableSelectionCondition, latestCompositeCondition, ownFactEvidenceCondition } from "./scope.ts";
 
@@ -29,6 +30,7 @@ interface ArticleRow {
   backfill: boolean;
   body_status: string;
   body_text: string | null;
+  excerpt: string | null;
   x_post: XPostData | null;
   x_article: { text?: string } | null;
   grouped_at: Date | null;
@@ -240,7 +242,7 @@ export async function republishTx(tx: Tx, articleId: string, options: PublishOpt
 export async function publishArticleTx(tx: Tx, articleId: string, options: PublishOptions = {}): Promise<PublishResult | null> {
   const [article] = await tx<ArticleRow[]>`
     SELECT id, source_id, url, title, language, published_at, discovered_at, timeline_at, backfill, body_status,
-           body_text, x_post, x_article, grouped_at, grouping_status, selection_adds_value
+           body_text, excerpt, x_post, x_article, grouped_at, grouping_status, selection_adds_value
     FROM articles WHERE id = ${articleId} FOR UPDATE`;
   if (!article) return null;
   // Explicit imports carry an already-public editorial decision, not a new pending judgement.
@@ -277,12 +279,14 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   const zhTitle = analysis?.title_zh?.trim() ? analysis.title_zh : null;
   const original = originalPostCopy(article.x_post, article.url, article.x_article);
   const title = pickString(f.title, original?.title ?? zhTitle ?? (isChineseTitle || article.x_post ? collapseWhitespace(article.title) : null));
-  const summary = pickString(f.summary, original ? original.summary : analysis?.summary_zh ?? null);
+  const isOfficial = isOfficialEditorialSource(source);
+  const officialSummary = isOfficial && (article.excerpt || article.body_text) ? collapseWhitespace(article.excerpt || article.body_text!).slice(0, 300) : null;
+  const summary = pickString(f.summary, original ? original.summary : (analysis?.summary_zh ?? officialSummary));
   const category = pickString(f.category, analysis?.category ?? null);
   const tags = Array.isArray(f.tags) ? (f.tags as string[]) : [...new Set([...(analysis?.tags ?? []), ...(analysis?.subjects ?? []).map((s) => `entity:${s}`)])];
   const score = f.score === null || typeof f.score === "number" ? f.score : analysis?.score ?? null;
-  const relevance = typeof f.relevance === "string" ? (f.relevance as string) : analysis?.relevance ?? null;
-  const judgedSelected = typeof f.selected === "boolean" ? (f.selected as boolean) : analysis?.selected ?? null;
+  const relevance = typeof f.relevance === "string" ? (f.relevance as string) : (analysis?.relevance ?? (isOfficial ? "pass" : null));
+  const judgedSelected = typeof f.selected === "boolean" ? (f.selected as boolean) : (isOfficial ? true : (analysis?.selected ?? null));
   // Material from an isolated source reaches no public surface at all: not even a detail page.
   const visibility = source.participation_mode === "isolated" ? "withdrawn" : (override?.visibility ?? "public");
 
@@ -292,12 +296,12 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
     && (!article.backfill || article.published_at !== null || !!options.releasedAt);
   const selectionCandidate = isSelectable(eligible, judgedSelected, source.tier);
   // Scoring nominates a report; a completed identity/value decision admits it to selection.
-  // Nothing releases a candidate without one: a timeout, a missing or invalid answer is no evidence the
-  // report is new, so it waits (readable in the pool) rather than risk a repeat in the selection and its push.
+  // Ordinary candidates wait for that decision: a timeout or missing answer is no evidence of new value.
+  // Explicitly trusted upstream editors already made their selection; local overrides still take priority.
   // A historical import already has its public decision. Preserve that confirmed state on rebuild.
-  const selected = selectionCandidate && article.grouping_status === "complete"
-    && (f.selected === true || article.selection_adds_value !== false);
-  const reason = selected ? pickString(f.reason, original ? null : analysis?.reason_zh ?? null) : null;
+  const selected = selectionCandidate && (article.grouping_status === "complete" || isOfficial)
+    && (f.selected === true || isOfficial || article.selection_adds_value !== false);
+  const reason = selected ? pickString(f.reason, original ? null : (analysis?.reason_zh ?? (isOfficial ? "来源编辑已选定发布" : null))) : null;
   const hasXPost = !!article.x_post;
   const channel = channelOf(source.kind, hasXPost);
   const hasBody = !!article.body_text || !!article.x_post?.text || !!article.x_post?.media?.length || !!article.x_post?.quoted?.text;

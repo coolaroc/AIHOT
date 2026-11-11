@@ -17,6 +17,8 @@ import { firstDaily } from "./reports.ts";
 import { mentionsIn } from "./mentions.ts";
 
 interface DetailRow extends ItemRow {
+  /** Machine redistribution requires the current source grant as well as its published permission. */
+  redistributable: boolean;
   /** A post's long X Article as its page shows it (xArticleHtml); lists leave it out. */
   x_article_html: string | null;
   body_html: string | null;
@@ -51,7 +53,8 @@ function withOutline(html: string): { html: string; outline: OutlineEntry[] } {
 
 async function loadRow(id: string, now = new Date()): Promise<DetailRow | null> {
   const [row] = await sql<DetailRow[]>`
-    SELECT ${ITEM_COLUMNS}, CASE WHEN p.body_mode = 'full' THEN a.x_article->>'html' END AS x_article_html,
+    SELECT ${ITEM_COLUMNS}, (p.syndicate AND s.site_fulltext AND s.syndicate_fulltext) AS redistributable,
+      CASE WHEN p.body_mode = 'full' THEN a.x_article->>'html' END AS x_article_html,
       a.body_html, a.body_text, a.body_status, a.cover, tr.body_html AS tr_html, tr.complete AS tr_complete,
       ${topicMembership()} AS topics, ${thinPageCondition()} AS thin, ${eventPageCondition(now)} AS event_page
     ${ITEM_FROM}

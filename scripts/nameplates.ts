@@ -19,7 +19,7 @@ const H = 220;
 /** Latin capitals a touch shorter than the ideographs, which read larger. */
 const CAPS = H * 0.94;
 const MARGIN = 12;
-const isLatin = (ch: string) => /[A-Za-z]/.test(ch);
+const isLatin = (ch: string) => /[A-Za-z0-9]/.test(ch);
 /** Space between the inks of two neighbours. */
 function gap(a: string, b: string): number {
   if (isLatin(a) && isLatin(b)) return H * 0.07;

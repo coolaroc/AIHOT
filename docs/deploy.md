@@ -62,6 +62,8 @@ MCP 默认接受 `SITE_URL` 的主机以及 `localhost`、`127.0.0.1`、`[::1]`�
 
 ### 更新
 
+本次非小号主站编辑源接入：`industry/sources.json` 已统一为当前 136 个 Web3 信源和两个主站编辑源（共 138 个）。重新运行 seed 只添加缺失 ID，不覆盖后台配置，也不删除已有信源或内容；此前加入过主站源的部署，需在后台对照种子更新 `requireValue`、`bodyPaths`、摘要字段和头条链接。`modules/main-site/server.ts` 仅授权两个明确 ID 保留上游精选决定，T1 与 owner 不授予此权限。没有新增迁移或数据删除。更新代码并重建 API、worker 和 web 后生效；已有内容可用后台重新发布或评估流程复核。AI 站新增历史搜索与单篇内容读取，见 [AI 接入](ai-integration.md)。
+
 **2026 年 10 月 31 日的引擎同步**有三个数据库迁移（`0090`–`0092`），照下面的命令更新时 setup 会跑它们：信源多一列可选的类别 `selection_class`，反馈多了 `kind`（类型）和 `idea`（归入的建议）两列，都可以为空，旧数据不用改。没有必填的新环境变量。要注意的变化：
 
 - **`industry/selection.ts` 多了 `classes` 和 `browseFloor`**，见 [精选与校准](selection.md#门槛industryselectionts)；自己改过这个文件的，合并时补上这两项，不补通不过类型检查。

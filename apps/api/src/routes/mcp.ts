@@ -14,9 +14,9 @@ import { isValidDate } from "@aihot/contracts/time";
 import { config } from "@aihot/backend/config";
 import { cachedByKey } from "@aihot/backend/lib/cache";
 import { logError } from "@aihot/backend/lib/log-error";
-import { dailyAnswer, hotAnswer, latestAnswer, periodAnswer, searchAnswer, searchItems, storyAnswer } from "@aihot/backend/publication/agent";
+import { dailyAnswer, hotAnswer, itemAnswer, latestAnswer, periodAnswer, searchAnswer, searchItems, storyAnswer } from "@aihot/backend/publication/agent";
 import { SELECTION } from "@aihot/industry/selection";
-import { v1Items } from "@aihot/backend/publication/v1";
+import { v1Item, v1Items } from "@aihot/backend/publication/v1";
 import { SearchBusyError } from "@aihot/backend/publication/pool";
 import { resolveStory, v1HotTopics, v1Story } from "@aihot/backend/publication/stories";
 import { dailyWithNotes, isPeriodKey, v1Period } from "@aihot/backend/publication/reports";
@@ -26,6 +26,7 @@ import { serverModules } from "@aihot/backend/modules";
 const USES = [
   `${T.latest} for briefings`,
   `${T.search} for a named subject`,
+  `${T.item} to read an item returned by search, including licensed full text`,
   `${T.hot} for the current ranked events`,
   `${T.story} only with a public ID returned by hot topics`,
   `${T.daily} for an edited daily overview`,
@@ -83,7 +84,7 @@ const LATEST_INPUT = z.strictObject({
 });
 const SEARCH_INPUT = z.strictObject({
   q: z.string().min(2).max(200).describe("Search query, 2 to 200 characters."),
-  window: z.enum(["24h", "7d"]).default("7d").describe("Search window. Defaults to the latest 7 days."),
+  window: z.enum(["24h", "7d", "all"]).default("7d").describe("Search window. Use all for historical searches; defaults to the latest 7 days."),
   category,
   limit: z.number().int().min(1).max(30).default(10).describe("Maximum number of results, from 1 to 30."),
 });
@@ -145,7 +146,7 @@ function registerTools(server: McpServer) {
   server.registerTool(
     T.search,
     {
-      description: `Search ${SITE.name}'s latest 7 days by a 2–200 character topic, company, model, product, or person. It searches editorial picks first and automatically expands to all public items only when picks have no result.`,
+      description: `Search ${SITE.name} by a 2–200 character topic, company, product, or person. Defaults to 7 days; use window=all for history. Searches picks first, expanding to all public items when picks have no result. Read a returned item ID with ${T.item}.`,
       inputSchema: SEARCH_INPUT,
       annotations: ANNOTATIONS,
     },
@@ -155,6 +156,20 @@ function registerTools(server: McpServer) {
       if ([...q].length < 2) return fail("invalid_request", "搜索词需要 2 到 200 个字符。");
       const found = await searchItems(q, args.window, args.category ?? null, args.limit, (query) => recent(`items:${JSON.stringify(query)}`, () => v1Items(query)));
       return ok(searchAnswer(found, { q, window: args.window, category: args.category ?? null }), { schemaVersion: 1, query: found.res.query, items: found.res.items });
+    }),
+  );
+
+  server.registerTool(
+    T.item,
+    {
+      description: `Read an item ID returned by ${T.search} or ${T.latest}. Returns the summary and authorized Markdown body. Withdrawn and isolated items are unavailable; never infer missing full text from a summary.`,
+      inputSchema: z.strictObject({ id: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/).describe("Item ID returned by search or a listing.") }),
+      annotations: ANNOTATIONS,
+    },
+    safe(T.item, async (args) => {
+      const result = await v1Item(args.id);
+      if (!result) return fail("not_found", "没有这个公开条目。");
+      return ok(itemAnswer(result), result);
     }),
   );
 

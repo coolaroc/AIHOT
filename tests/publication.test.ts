@@ -23,6 +23,8 @@ import { v1Items } from "@aihot/backend/publication/v1";
 import { SELECTION } from "@aihot/industry/selection";
 import { loadItemShare } from "@aihot/backend/publication/og";
 import { buildApp } from "../apps/api/src/app.ts";
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { MCP_TOOL_NAMES } from "@aihot/contracts/mcp";
 
 const T = tag();
 const SOURCE = `test-publication-${T}`;
@@ -49,7 +51,7 @@ async function article(): Promise<string> {
     sourceId: SOURCE, url: `https://example.com/${T}-${n}`, title: `Test ${n}`, bodyText: BODY, bodyHtml: `<p>${BODY}</p>`, bodyStatus: "ok", via: "fetch", publishedAt: minuteAgo, discoveredAt: minuteAgo,
   });
   await sql`INSERT INTO analyses (article_id, input_revision, origin, relevance, category, title_zh, summary_zh, reason_zh, score, selected)
-            VALUES (${articleId}, 1, 'rule', 'pass', 'ai-models', ${`标题${n}-${T}`}, ${`SUMMARY-${n}-${T}`}, '理由', 90, true)`;
+            VALUES (${articleId}, 1, 'rule', 'pass', 'l1-l2', ${`标题${n}-${T}`}, ${`SUMMARY-${n}-${T}`}, '理由', 90, true)`;
   return articleId;
 }
 
@@ -68,6 +70,101 @@ async function get(url: string, headers: Record<string, string> = {}) {
   const res = await app.inject({ method: "GET", url, headers });
   return { status: res.statusCode, body: res.body, etag: res.headers.etag as string | undefined };
 }
+
+test("historical search pages beyond seven days and binds its cursor to the query", async () => {
+  const ids = [await article(), await article()];
+  const term = `archive${T}`;
+  for (const [i, id] of ids.entries()) {
+    const date = new Date(Date.now() - (30 + i) * 86400_000);
+    await sql`UPDATE articles SET published_at=${date},timeline_at=${date} WHERE id=${id}`;
+    await sql`UPDATE analyses SET title_zh=${`${term} 历史报道 ${i}`} WHERE article_id=${id}`;
+    await publishArticle(id, released());
+  }
+  const path = `/api/v1/items?mode=all&window=all&by=published&q=${term}&limit=1`;
+  const first = JSON.parse((await get(path)).body);
+  assert.equal(first.items[0].id, ids[0]);
+  assert.equal(first.page.hasMore, true);
+  const second = JSON.parse((await get(`${path}&cursor=${encodeURIComponent(first.page.nextCursor)}`)).body);
+  assert.equal(second.items[0].id, ids[1]);
+  assert.equal(second.page.hasMore, false);
+  const recent = JSON.parse((await get(path.replace("window=all", "window=7d"))).body);
+  assert.deepEqual(recent.items, []);
+  assert.equal((await get(`${path.replace("window=all", "window=7d")}&cursor=${encodeURIComponent(first.page.nextCursor)}`)).status, 400);
+  assert.ok((await get(`/api/v1/agent/search?q=${term}&window=all`)).body.includes(ids[0]!));
+});
+
+test("single-item REST, Agent and MCP reads share current body grants and withdrawal rules", async () => {
+  const id = await article();
+  await sql`UPDATE articles SET grouping_status='complete',body_html=${`<p>${BODY}</p><img src="https://example.com/body-image.png">`} WHERE id=${id}`;
+  await publishArticle(id, released());
+  const path = `/api/v1/items/${id}`;
+  const original = await app.inject({ method: "GET", url: path, headers: { origin: "https://reader.example" } });
+  assert.equal(original.statusCode, 200, original.body);
+  assert.equal(original.headers["access-control-allow-origin"], "*");
+  const body = original.json();
+  assert.equal(body.item.selected, true);
+  assert.equal(body.item.content.mode, "full");
+  assert.equal(body.item.content.complete, true);
+  assert.ok(body.item.content.markdown.includes(BODY.trim()));
+  assert.ok(body.item.content.markdown.includes("https://example.com/body-image.png"), "page image proxies must resolve back to the correct content URL");
+  assert.notEqual(body.item.summary, body.item.content.markdown);
+  assert.equal((await get(path, { "if-none-match": String(original.headers.etag) })).status, 304);
+  await sql`UPDATE publications SET seat=false WHERE article_id=${id}`;
+  assert.equal(JSON.parse((await get(path)).body).item.selected, false, "machine detail must agree with list selection seats");
+  await sql`UPDATE publications SET seat=true WHERE article_id=${id}`;
+  assert.equal((await get(`${path}?unknown=1`)).status, 400);
+  assert.equal((await get("/api/v1/items/invalid.id")).status, 400);
+  assert.equal((await get("/api/v1/items/does-not-exist")).status, 404);
+
+  const address = await app.listen({ host: "127.0.0.1", port: 0 });
+  const client = new Client({ name: "publication-detail-check", version: "1.0.0" });
+  try {
+    await client.connect(new StreamableHTTPClientTransport(new URL(`${address}/api/mcp`)));
+    const read = async () => (await client.callTool({ name: MCP_TOOL_NAMES.item, arguments: { id } })).structuredContent as any;
+    assert.equal((await read()).item.content.markdown, body.item.content.markdown);
+    assert.ok((await get(`/api/v1/agent/items/${id}`)).body.includes(BODY.trim()));
+
+    await sql`INSERT INTO translations(article_id,revision,body_html,body_text,complete,origin)
+      VALUES(${id},1,'<p>尚未完成的中文译文</p>','尚未完成的中文译文',false,'source')`;
+    const partial = JSON.parse((await get(path)).body).item.content;
+    assert.equal(partial.language, "zh");
+    assert.equal(partial.complete, false);
+    assert.equal(partial.markdown, "尚未完成的中文译文");
+    assert.ok((await get(`/api/v1/agent/items/${id}`)).body.includes("正文（尚未完整）"));
+    await sql`DELETE FROM translations WHERE article_id=${id}`;
+
+    // A current licence revocation applies even before the publication rebuild runs.
+    await sql`UPDATE sources SET syndicate_fulltext=false WHERE id=${SOURCE}`;
+    const reduced = await get(path, { "if-none-match": String(original.headers.etag) });
+    assert.equal(reduced.status, 200);
+    assert.equal(JSON.parse(reduced.body).item.content.mode, "summary");
+    assert.equal(JSON.parse(reduced.body).item.content.markdown, null);
+    assert.equal((await read()).item.content.markdown, null);
+    assert.ok(!(await get(`/api/v1/agent/items/${id}`)).body.includes(BODY.trim()));
+    await sql`UPDATE sources SET syndicate_fulltext=true WHERE id=${SOURCE}`;
+
+    await setVisibility(id, { visibility: "summary-only", reason: "neutral summary", version: 0 }, "test");
+    const neutral = JSON.parse((await get(path)).body).item;
+    assert.equal(neutral.content.markdown, null);
+    assert.equal(neutral.selected, false);
+    assert.equal(neutral.score, null);
+    assert.deepEqual(neutral.tags, []);
+    assert.equal((await read()).item.content.markdown, null);
+    await setVisibility(id, { visibility: "withdrawn", reason: "withdraw detail", version: 1 }, "test");
+    for (const url of [path, `/api/v1/agent/items/${id}`]) assert.equal((await get(url)).status, 404);
+    assert.equal((await read()).error.code, "not_found");
+
+    const other = await article();
+    await publishArticle(other, released());
+    await sql`UPDATE sources SET participation_mode='isolated' WHERE id=${SOURCE}`;
+    assert.equal((await get(`/api/v1/items/${other}`)).status, 404);
+    assert.equal((await get(`/api/v1/agent/items/${other}`)).status, 404);
+    assert.equal(((await client.callTool({ name: MCP_TOOL_NAMES.item, arguments: { id: other } })).structuredContent as any).error.code, "not_found");
+  } finally {
+    await client.close();
+    await sql`UPDATE sources SET syndicate_fulltext=true,participation_mode='editorial' WHERE id=${SOURCE}`;
+  }
+});
 
 // Failure modes: a revoked score falls back to the erroneous model score, zero is treated as
 // missing, republishing loses a correction, invalid scores or stale edits alter public state,

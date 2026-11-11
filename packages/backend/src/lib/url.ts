@@ -154,7 +154,7 @@ export function isBlockedAddress(address: string): boolean {
 function ipv4PrivateService(o: [number, number, number, number]): boolean {
   const [a, b, c, d] = o;
   if (a === 100 && b === 100 && c === 100 && d === 200) return false; // Alibaba Cloud metadata, inside carrier-grade NAT
-  return a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  return a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 198 && (b === 18 || b === 19));
 }
 
 /**

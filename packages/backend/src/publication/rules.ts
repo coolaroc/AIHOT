@@ -31,6 +31,12 @@ export interface SourceFacts {
   syndicate_fulltext: boolean;
 }
 
+/** Only a module's exact source allowlist can retain an upstream editor's selection. */
+export function isOfficialEditorialSource(source: Pick<SourceFacts, "id" | "participation_mode">): boolean {
+  return source.participation_mode === "editorial"
+    && serverModules().some((m) => m.trustedEditorialSources?.includes(source.id));
+}
+
 export function channelOf(sourceKind: string, hasXPost: boolean): "x" | "news" {
   return sourceKind === "x_search" || hasXPost ? "x" : "news";
 }

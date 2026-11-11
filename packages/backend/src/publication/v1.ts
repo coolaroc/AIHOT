@@ -8,10 +8,13 @@ import { browsedCondition, listedCondition, seatedCondition } from "./scope.ts";
 import { publicMatchCondition, searchTerms, withSearchCapacity } from "./pool.ts";
 import { sharedSearch } from "../lib/cache.ts";
 import { v1Payload, type V1ItemPayload } from "./publish.ts";
+import { loadItemDetail } from "./detail.ts";
+import { bodyToMarkdown } from "../content/markdown.ts";
+import { siteUrl } from "./links.ts";
 
 export interface V1ItemsQuery {
   mode: "selected" | "all";
-  window: "24h" | "7d";
+  window: "24h" | "7d" | "all";
   by: "timeline" | "published";
   category: PublicApiCategoryKey | null;
   q: string | null;
@@ -34,6 +37,33 @@ export function rowToV1(row: ApiItemRow): V1ItemPayload {
   });
 }
 
+/** Single-item reads use the page's current visibility, source licence and translation revision. */
+export async function v1Item(id: string) {
+  const result = await loadItemDetail(id);
+  if (result.kind === "not_found") return null;
+  const { item, row } = result;
+  const html = row.redistributable ? item.body?.zh ?? item.body?.original ?? null : null;
+  return {
+    schemaVersion: 1 as const,
+    item: {
+      ...rowToV1({ ...row, selected: item.selected && row.seat, score: item.score, category: item.category, reason: item.reason }),
+      author: item.author,
+      tags: item.tags,
+      content: {
+        mode: html ? "full" as const : "summary" as const,
+        markdown: html ? bodyToMarkdown(html, row.url) : null,
+        language: html ? item.bodyLanguage ?? "original" : null,
+        complete: !!html && (item.bodyLanguage === "original" || item.body?.zhKind === "original" ? row.body_status === "ok" : item.body?.complete === true),
+      },
+      links: {
+        aihot: siteUrl(`/items/${id}`), original: row.url,
+        api: siteUrl(`/api/v1/items/${id}`),
+        markdown: row.redistributable && item.markdownAvailable ? siteUrl(`/items/${id}/markdown`) : null,
+      },
+    },
+  };
+}
+
 /** Search callers across HTTP and tools share one read. */
 export const v1Items = sharedSearch(
   (q: V1ItemsQuery) => JSON.stringify([q.mode, q.window, q.by, q.category, q.q, q.limit, q.cursor]),
@@ -41,8 +71,7 @@ export const v1Items = sharedSearch(
 );
 
 async function queryItems(query: V1ItemsQuery, now: Date): Promise<V1ItemsResult> {
-  const windowMs = query.window === "24h" ? 86400000 : 7 * 86400000;
-  const windowStart = new Date(now.getTime() - windowMs);
+  const windowStart = query.window === "all" ? null : new Date(now.getTime() - (query.window === "24h" ? 86400000 : 7 * 86400000));
   const binding = queryBinding({ m: query.mode, w: query.window, b: query.by, c: query.category, q: query.q });
   // by=timeline is the site's own order: a selected item at its reading-group anchor, anything else at its timeline time.
   const sortCol = query.by === "published" ? sql`coalesce(p.published_at, p.discovered_at)` : query.mode === "selected" ? sql`p.sort_at` : sql`p.timeline_at`;
@@ -52,7 +81,7 @@ async function queryItems(query: V1ItemsQuery, now: Date): Promise<V1ItemsResult
     if (c.c !== binding || !Number.isSafeInteger(c.a) || !Number.isFinite(new Date(c.a).getTime())
       || typeof c.i !== "string" || !/^[a-zA-Z0-9_-]{1,80}$/.test(c.i)) throw new InvalidCursorError("cursor does not belong to this query");
     // The rolling window slid past the anchor: tell the client instead of returning an empty page.
-    if (c.a < windowStart.getTime()) throw new InvalidCursorError("the rolling window moved past this cursor");
+    if (windowStart && c.a < windowStart.getTime()) throw new InvalidCursorError("the rolling window moved past this cursor");
     after = { a: c.a, i: c.i };
   }
   const scope = query.mode === "selected" ? seatedCondition(now) : query.q ? listedCondition(now) : browsedCondition(now);
@@ -61,7 +90,7 @@ async function queryItems(query: V1ItemsQuery, now: Date): Promise<V1ItemsResult
   const run = (db: Db) => db<(ApiItemRow & { sort_at: Date })[]>`
     SELECT ${API_ITEM_COLUMNS}, ${sortCol} AS sort_at ${API_ITEM_FROM}
     WHERE ${scope} ${publicCategoryCondition(query.category)} ${publicMatchCondition(terms)}
-      AND ${sortCol} >= ${windowStart} AND ${sortCol} <= ${now}
+      ${windowStart ? sql`AND ${sortCol} >= ${windowStart}` : sql``} AND ${sortCol} <= ${now}
       ${after ? sql`AND (${sortCol}, p.article_id) < (${new Date(after.a)}, ${after.i})` : sql``}
     ORDER BY ${sortCol} DESC, p.article_id DESC
     LIMIT ${query.limit + 1}`;

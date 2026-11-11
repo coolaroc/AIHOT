@@ -8,6 +8,7 @@ export const mcpToolName = (tool: string): string => `${SITE.mcpPrefix}_${tool}`
 export const MCP_TOOL_NAMES = {
   latest: mcpToolName("get_latest"),
   search: mcpToolName("search"),
+  item: mcpToolName("get_item"),
   hot: mcpToolName("get_hot_topics"),
   story: mcpToolName("get_story"),
   daily: mcpToolName("get_daily"),

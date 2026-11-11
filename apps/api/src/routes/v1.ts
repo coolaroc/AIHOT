@@ -5,7 +5,7 @@ import { PUBLIC_API_CATEGORY_KEYS, type PublicApiCategoryKey } from "@aihot/cont
 import { config } from "@aihot/backend/config";
 import { InvalidCursorError } from "@aihot/backend/lib/cursor";
 import { SearchBusyError } from "@aihot/backend/publication/pool";
-import { selectedChanges, selectedSnapshot, SnapshotRequiredError, v1Items } from "@aihot/backend/publication/v1";
+import { selectedChanges, selectedSnapshot, SnapshotRequiredError, v1Item, v1Items } from "@aihot/backend/publication/v1";
 import { resolveStory, v1HotTopics, v1Story } from "@aihot/backend/publication/stories";
 import { isPeriodKey, v1Dailies, v1Daily, v1Period, v1Periods } from "@aihot/backend/publication/reports";
 import { isValidDate } from "@aihot/contracts/time";
@@ -18,6 +18,7 @@ const op = (queryKeys: readonly string[], cacheControl: string) => ({ queryKeys,
 
 export const V1_OPERATIONS = {
   items: op(["mode", "category", "window", "by", "q", "limit", "cursor"], "public, max-age=60, s-maxage=60, must-revalidate"),
+  itemById: op([], "public, max-age=60, s-maxage=60, must-revalidate"),
   hotTopics: op([], "public, max-age=60, s-maxage=60, must-revalidate"),
   storyByPublicId: op([], "public, max-age=60, s-maxage=60, must-revalidate"),
   dailies: op(["limit"], "public, max-age=60, s-maxage=60, must-revalidate"),
@@ -87,7 +88,7 @@ export function registerV1(app: FastifyInstance) {
   app.get("/api/v1/items", publicHandler(async (req, reply) => {
     const q = strictQuery(req, V1_OPERATIONS.items.queryKeys);
     const mode = enumParam(q.mode, "mode", ["selected", "all"] as const, "selected");
-    const window = enumParam(q.window, "window", ["24h", "7d"] as const, "7d");
+    const window = enumParam(q.window, "window", ["24h", "7d", "all"] as const, "7d");
     const by = enumParam(q.by, "by", ["timeline", "published"] as const, "timeline");
     const category = q.category === undefined ? null : enumParam<PublicApiCategoryKey>(q.category, "category", PUBLIC_API_CATEGORY_KEYS, PUBLIC_API_CATEGORY_KEYS[0]);
     let search: string | null = null;
@@ -100,6 +101,15 @@ export function registerV1(app: FastifyInstance) {
     if (q.cursor !== undefined && q.cursor.length === 0) throw new InvalidCursorError("empty cursor");
     const body = await v1Items({ mode, window, by, category, q: search, limit, cursor: q.cursor ?? null });
     return sendV1(req, reply, body, { etagPrefix: "v1-items", cacheControl: V1_OPERATIONS.items.cacheControl });
+  }));
+
+  app.get("/api/v1/items/:id", publicHandler(async (req, reply) => {
+    strictQuery(req, V1_OPERATIONS.itemById.queryKeys);
+    const id = (req.params as { id: string }).id;
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) throw new QueryError("id must be an item ID returned by search or a listing.");
+    const body = await v1Item(id);
+    if (!body) return sendProblem(req, reply, { status: 404, code: "not_found", detail: "No public item exists for this ID.", cacheControl: "public, max-age=60, must-revalidate" });
+    return sendV1(req, reply, body, { etagPrefix: "v1-item", cacheControl: V1_OPERATIONS.itemById.cacheControl });
   }));
 
   app.get("/api/v1/hot-topics", publicHandler(async (req, reply) => {

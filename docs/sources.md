@@ -124,6 +124,8 @@
 - 接口本身返回数组时，省略 `itemsPath`。`titlePaths`、`summaryPaths`、`authorPaths` 是候选路径数组，按顺序取第一个非空值，例如 `["title", "name"]`。
 - 已有完整网址时用 `{raw:url}`；只有 slug 时可用 `https://example.com/posts/{slug}`。`{字段路径}` 会编码字段值，`{raw:字段路径}` 原样插入。JSON 列表不会自动把相对网址补成绝对网址，模板应产出完整的 HTTP(S) 地址。
 - `summaryIsBody`：确认接口里的摘要就是全文时设为 `true`，把 `summaryPaths` 取到的文字当正文，不再去抓原文页。
+- `bodyPaths`：接口单独提供完整正文时，填写正文文本字段的候选路径（例如 `["plain_text"]`），与 `summaryPaths` 分开读取。只有实际取到非空正文才标记完成；列表只有摘要时，使用 `fetchPublicContent: true` 从原文页读取正文，不要设置 `summaryIsBody`。
+- `requireValue`：按字段的精确值逐条过滤，例如 `{ "path": "source", "equals": "manual" }`。只接受字符串、数字或布尔值，不做类型转换；字段缺失的条目不收。服务端查询参数不保证已过滤时，仍执行此校验。
 - 日期建议返回带时区的 ISO 字符串；`2026-09-30 17:43:58` 这类不带时区的时间，与网页列表一样按 `publishedAtUtcOffset` 读（默认 `+08:00`）；数字时间戳分别设 `publishedAtUnit: "epoch_s"`（秒）或 `"epoch_ms"`（毫秒），`20261001` 这类日期设 `"yyyymmdd"`。
 - 缺少标题或无法生成链接的条目会跳过。非空数组全部映射失败时，会报 `no items mapped (check title/url paths)`；路径不是数组时，会报 `items path did not resolve to an array`。
 

@@ -65,6 +65,7 @@ export function McpPanel(props: AgentPanelProps) {
           rows={[
             [<Mono>{T.latest}</Mono>, "过去 24 小时或最近 7 天的精选、全部资讯", `${subjectAfter("今天有什么", "新闻")}？`],
             [<Mono>{T.search}</Mono>, AGENT.search.scope, AGENT.search.ask],
+            [<Mono>{T.item}</Mono>, "按搜索返回的 ID 读取摘要与授权正文", "把这条资讯的正文读给我。"],
             [<Mono>{T.hot}</Mono>, "当前热点榜 Top 10", "现在最热的是什么？"],
             [<Mono>{T.story}</Mono>, "一个热点事件的时间线和持续更新的综述", "这件事的来龙去脉？"],
             [<Mono>{T.daily}</Mono>, subjectAfter("最新或指定日期的", "日报"), "给我今天的日报。"],
@@ -206,6 +207,8 @@ export function ApiPanel(props: AgentPanelProps) {
           rows={[
             { group: "资讯" },
             [<Mono>/api/v1/items</Mono>, "精选或最近 7 天全部动态，可按分类、时间窗、关键词筛", "最快 1 分钟一次"],
+            [<Mono>{"/api/v1/items?mode=all&window=all&q=关键词"}</Mono>, "检索全部历史；按返回的 cursor 翻页", "需要时"],
+            [<Mono>{"/api/v1/items/{id}"}</Mono>, "读取单篇摘要及授权 Markdown 正文；撤稿返回 404", "缓存过期后使用前验证 ETag"],
             { group: "热点与事件" },
             [<Mono>/api/v1/hot-topics</Mono>, "当前热点榜 Top 10", "最快 1 分钟一次"],
             [<Mono>{"/api/v1/stories/{publicId}"}</Mono>, "一个事件的报道时间线、AI 综述和关联事件", "需要时"],

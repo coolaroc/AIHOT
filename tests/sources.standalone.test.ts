@@ -21,6 +21,12 @@ import { noiseFiltered } from "@aihot/backend/sources/filters";
 const source = (config: Record<string, unknown>) => ({ id: "test-list", config }) as never;
 
 const pages: Record<string, () => string> = {
+  "/editorial.json": () => JSON.stringify({ items: [
+    { id: 1, source: "manual", title: "人工快讯", summary: "简短摘要", plain_text: "完整正文，包含摘要中没有的后半段。" },
+    { id: 2, source: "jinse", title: "自动采集快讯", summary: "自动摘要", plain_text: "自动正文" },
+    { id: 3, title: "缺少来源的快讯", summary: "摘要" },
+    { id: 4, source: true, title: "来源类型不正确", summary: "摘要" },
+  ] }),
   // A news site's feed: a teaser that ends in "Read the full story", next to a post whose feed carries it whole.
   "/teaser.xml": () =>
     `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">` +
@@ -243,6 +249,25 @@ test("a time without a zone is read in the source's offset, in JSON lists and in
   assert.deepEqual(await list({ publishedAtUtcOffset: "+00:00" }), ["2026-09-30T17:43:58.000Z", "2026-09-30T17:43:58.000Z", "2026-09-30T22:43:58.000Z"]);
   const detail = async (offset?: string) => (await fetchDetail(`${site}/zoneless-post`, { id: "test-feed", config: { detail: { maxFetches: 20, publishedAtUtcOffset: offset } } } as never, { date: true, title: false, summary: false, body: false })).publishedAt?.toISOString();
   assert.deepEqual([await detail(), await detail("+00:00")], ["2026-09-30T09:43:58.000Z", "2026-09-30T17:43:58.000Z"]);
+});
+
+test("JSON lists verify the publisher's exact source field and keep summary separate from body", async () => {
+  const config = { url: `${site}/editorial.json`, itemsPath: "items", titlePaths: ["title"], summaryPaths: ["summary"],
+    bodyPaths: ["plain_text"], urlTemplate: "https://example.org/news/flashes/{id}", requireValue: { path: "source", equals: "manual" } };
+  assert.deepEqual(unsupportedConfig("json_list", config), []);
+  const items = await fetchJsonList(source(config));
+  assert.equal(items.length, 1, "server-side query parameters cannot replace validation of each returned row");
+  assert.equal(items[0].excerpt, "简短摘要");
+  assert.equal(items[0].bodyText, "完整正文，包含摘要中没有的后半段。");
+  assert.ok(items[0].bodyHtml?.includes("完整正文，包含摘要中没有的后半段。"), "a confirmed plain-text body must also be readable on detail pages");
+  assert.equal(items[0].bodyStatus, "ok");
+  const summaries = await fetchJsonList(source({ ...config, bodyPaths: [] }));
+  assert.equal(summaries[0].bodyText, null);
+  assert.equal(summaries[0].bodyStatus, "pending", "a summary must not complete body extraction");
+  assert.deepEqual(await fetchJsonList(source({ ...config, requireValue: { path: "source", equals: "missing" } })), []);
+  for (const rule of [{ path: "", equals: "manual" }, { path: "source", equals: null }, { path: "source", equals: ["manual"] }]) {
+    assert.deepEqual(unsupportedConfig("json_list", { requireValue: rule }), ["requireValue"]);
+  }
 });
 
 test("posts embedded in a flight payload keep their own arrays and brackets inside strings", async () => {

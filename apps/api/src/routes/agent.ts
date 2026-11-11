@@ -4,8 +4,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { PUBLIC_API_CATEGORY_KEYS, type PublicApiCategoryKey } from "@aihot/contracts/taxonomy";
 import { isValidDate } from "@aihot/contracts/time";
-import { agentGuide, dailyAnswer, hotAnswer, latestAnswer, periodAnswer, searchAnswer, searchItems, storyAnswer } from "@aihot/backend/publication/agent";
-import { v1Items } from "@aihot/backend/publication/v1";
+import { agentGuide, dailyAnswer, hotAnswer, itemAnswer, latestAnswer, periodAnswer, searchAnswer, searchItems, storyAnswer } from "@aihot/backend/publication/agent";
+import { v1Item, v1Items } from "@aihot/backend/publication/v1";
 import { resolveStory, v1HotTopics, v1Story } from "@aihot/backend/publication/stories";
 import { dailyWithNotes, isPeriodKey, v1Period } from "@aihot/backend/publication/reports";
 import { serverModules } from "@aihot/backend/modules";
@@ -18,7 +18,7 @@ function markdown(req: FastifyRequest, reply: FastifyReply, text: string, etagPr
 
 function listParams(q: Record<string, string>) {
   return {
-    window: enumParam(q.window, "window", ["24h", "7d"] as const, "24h"),
+    window: enumParam(q.window, "window", ["24h", "7d", "all"] as const, "24h"),
     category: q.category === undefined ? null : enumParam<PublicApiCategoryKey>(q.category, "category", PUBLIC_API_CATEGORY_KEYS, PUBLIC_API_CATEGORY_KEYS[0]),
     limit: intParam(q.limit, "limit", 1, 30, 10),
   };
@@ -42,9 +42,18 @@ export function registerAgent(app: FastifyInstance) {
     const q = strictQuery(req, ["q", "window", "category", "limit"]);
     const text = (q.q ?? "").trim();
     if ([...text].length < 2 || [...text].length > 200) throw new QueryError("q must contain 2 to 200 characters.");
-    const p = { ...listParams(q), window: enumParam(q.window, "window", ["24h", "7d"] as const, "7d") };
+    const p = { ...listParams(q), window: enumParam(q.window, "window", ["24h", "7d", "all"] as const, "7d") };
     const found = await searchItems(text, p.window, p.category, p.limit);
     return markdown(req, reply, searchAnswer(found, { q: text, window: p.window, category: p.category }), "agent-search", V1_OPERATIONS.items.cacheControl);
+  }));
+
+  app.get("/api/v1/agent/items/:id", publicHandler(async (req, reply) => {
+    strictQuery(req, []);
+    const id = (req.params as { id: string }).id;
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) throw new QueryError("id must be an item ID returned by search or a listing.");
+    const body = await v1Item(id);
+    if (!body) return sendProblem(req, reply, { status: 404, code: "not_found", detail: "没有这个公开条目。" });
+    return markdown(req, reply, itemAnswer(body), "agent-item", V1_OPERATIONS.itemById.cacheControl);
   }));
 
   app.get("/api/v1/agent/hot", publicHandler(async (req, reply) => {

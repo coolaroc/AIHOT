@@ -4,6 +4,7 @@ import { languageHeaders, requireOk } from "../lib/http-fetch.ts";
 import { JINA_PREFIX, jinaRead } from "../providers/jina.ts";
 import { fetchListing } from "./listing-fetch.ts";
 import { collapseWhitespace, stripTags } from "../lib/text.ts";
+import { textToHtml } from "../content/sanitize.ts";
 import { readPublicationDate, type PublicationDate } from "./dates.ts";
 import { FetchError, type Candidate, type SourceRow } from "./types.ts";
 
@@ -173,6 +174,7 @@ export async function fetchJsonList(source: SourceRow): Promise<Candidate[]> {
   const out: Candidate[] = [];
   for (const item of items) {
     if (c.requireBoolean && getPath(item, c.requireBoolean.path) !== c.requireBoolean.equals) continue;
+    if (c.requireValue && getPath(item, c.requireValue.path) !== c.requireValue.equals) continue;
     if (c.minNumeric && !(Number(getPath(item, c.minNumeric.path)) >= Number(c.minNumeric.min))) continue;
     const title = firstString(item, c.titlePaths);
     const linkedUrl = c.urlTemplate && renderTemplate(c.urlTemplate, item);
@@ -181,6 +183,8 @@ export async function fetchJsonList(source: SourceRow): Promise<Candidate[]> {
     const externalId = c.externalIdPath ? getPath(item, c.externalIdPath) : null;
     const summary = firstString(item, c.summaryPaths);
     const summaryIsBody = !c.detail?.bodyUrlSuffix && c.summaryIsBody === true && !!summary;
+    const body = firstString(item, c.bodyPaths) ?? (summaryIsBody ? summary : null);
+    const bodyText = body ? stripTags(body) : null;
     const date = toDate(getPath(item, c.publishedAtPath), c.publishedAtUnit, c.publishedAtUtcOffset);
     out.push({
       url,
@@ -189,11 +193,12 @@ export async function fetchJsonList(source: SourceRow): Promise<Candidate[]> {
       ...date,
       ...(!linkedUrl && c.publishedAtForFallbackUrl === true && date.publishedAt ? { listingDatesOriginal: true } : {}),
       excerpt: summary ? collapseWhitespace(stripTags(summary)).slice(0, 2000) : null,
-      bodyText: summaryIsBody ? stripTags(summary!) : null,
-      bodyStatus: summaryIsBody ? "ok" : "pending",
+      bodyText,
+      bodyHtml: bodyText ? textToHtml(bodyText) : null,
+      bodyStatus: bodyText ? "ok" : "pending",
       raw: { externalId: externalId ?? null },
     });
   }
-  if (items.length > 0 && out.length === 0 && !c.requireBoolean && !c.minNumeric) throw new FetchError("no items mapped (check title/url paths)");
+  if (items.length > 0 && out.length === 0 && !c.requireBoolean && !c.requireValue && !c.minNumeric) throw new FetchError("no items mapped (check title/url paths)");
   return out;
 }

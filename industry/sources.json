@@ -1,370 +1,3285 @@
 {
-  "$comment": "示范信源：首次启动时导入（scripts/seed.ts），已存在的不会被覆盖。之后在后台“信源”里新建、修改和暂停。字段说明见 docs/customize.md。",
+  "$comment": "Web3 信源基线：保留现有后台信源，并接入非小号主站人工快讯与编辑发布文章。seed 只新增缺失的 ID，不覆盖后台修改；人工快讯按 source=manual 逐条校验。",
   "sources": [
     {
-      "id": "rss-openai-news",
-      "name": "OpenAI News",
-      "kind": "rss",
+      "id": "feixiaohao-article",
+      "name": "非小号头条",
+      "kind": "json_list",
       "config": {
-        "feedUrl": "https://openai.com/news/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
+        "url": "https://feixiaohao.ai/fxs/api/content/articles?view=latest&limit=50",
+        "itemsPath": "items",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "summary"
+        ],
+        "urlTemplate": "https://feixiaohao.ai/news/articles/{id}",
+        "publishedAtPath": "published_at",
+        "externalIdPath": "id",
+        "authorPaths": [
+          "author"
+        ],
+        "sortByPublishedAt": true,
+        "fetchPublicContent": true
       },
       "tier": "T1",
-      "owner_entity_id": "openai",
+      "owner_entity_id": "feixiaohao",
       "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-google-deepmind",
-      "name": "Google DeepMind",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://deepmind.google/blog/rss.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "google",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-google-research",
-      "name": "Google Research",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://research.google/blog/rss/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
-      "owner_entity_id": "google",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 5,
       "tags": [
         "官方",
-        "研究"
+        "头条",
+        "深度"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-hugging-face",
-      "name": "Hugging Face Blog",
-      "kind": "rss",
+      "id": "feixiaohao-flash",
+      "name": "非小号官方快讯",
+      "kind": "json_list",
       "config": {
-        "feedUrl": "https://huggingface.co/blog/feed.xml",
-        "_aihot": {
-          "initialBackfillLimit": 8
+        "url": "https://feixiaohao.ai/fxs/api/flash?view=latest&limit=50&source=manual",
+        "itemsPath": "items",
+        "titlePaths": [
+          "title"
+        ],
+        "summaryPaths": [
+          "summary"
+        ],
+        "urlTemplate": "https://feixiaohao.ai/news/flashes/{id}",
+        "publishedAtPath": "published_at",
+        "externalIdPath": "id",
+        "authorPaths": [
+          "author"
+        ],
+        "sortByPublishedAt": true,
+        "bodyPaths": [
+          "plain_text"
+        ],
+        "requireValue": {
+          "path": "source",
+          "equals": "manual"
         }
       },
       "tier": "T1",
-      "owner_entity_id": "hugging-face",
+      "owner_entity_id": "feixiaohao",
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 5,
       "tags": [
         "官方",
-        "开源"
+        "快讯",
+        "一手"
       ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
+      "site_fulltext": true,
+      "syndicate_fulltext": true
     },
     {
-      "id": "rss-microsoft-research",
-      "name": "Microsoft Research",
-      "kind": "rss",
+      "id": "json-uniswap-blog",
+      "name": "Uniswap Blog",
+      "kind": "json_list",
       "config": {
-        "feedUrl": "https://www.microsoft.com/en-us/research/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 6
+        },
+        "url": "https://blog.uniswap.org/",
+        "mode": "html_json_key",
+        "jsonKey": "posts",
+        "itemsPath": "posts",
+        "titlePaths": [
+          "title"
+        ],
+        "urlTemplate": "https://blog.uniswap.org/{slug}",
+        "publishedAtPath": "date"
       },
       "tier": "T1",
-      "owner_entity_id": "microsoft",
+      "owner_entity_id": "uniswap",
       "participation_mode": "editorial",
-      "interval_minutes": 120,
+      "interval_minutes": 180,
       "tags": [
         "官方",
-        "研究"
+        "DeFi"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-nvidia-blog",
-      "name": "NVIDIA Blog",
-      "kind": "rss",
+      "id": "web-blocksec",
+      "name": "BlockSec Blog",
+      "kind": "web_list",
       "config": {
-        "feedUrl": "https://blogs.nvidia.com/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
+          "initialBackfillLimit": 6
+        },
+        "url": "https://blocksec.com/blog",
+        "parseMode": "html",
+        "itemSelector": "a[href^='/blog/']",
+        "linkSelector": "a",
+        "titleSelector": "h2, h3, p",
+        "allowUrlPrefixes": [
+          "https://blocksec.com/blog/"
+        ],
+        "detail": {
+          "maxFetches": 5,
+          "titleAuthoritative": true
         }
       },
-      "tier": "T1",
-      "owner_entity_id": "nvidia",
-      "participation_mode": "editorial",
-      "interval_minutes": 120,
-      "tags": [
-        "官方"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-aws-ml",
-      "name": "AWS Machine Learning Blog",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://aws.amazon.com/blogs/machine-learning/feed/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T1",
+      "tier": "T1_5",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
+        "安全",
+        "链上监控",
+        "预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "web-chainlink-blog",
+      "name": "Chainlink Blog",
+      "kind": "web_list",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "url": "https://chain.link/blog",
+        "parseMode": "html",
+        "itemSelector": "a[href^='/blog/']",
+        "linkSelector": "a",
+        "titleSelector": "h3, h2, h1",
+        "allowUrlPrefixes": [
+          "https://chain.link/blog/"
+        ],
+        "publishedAtUtcOffset": "+00:00",
+        "detail": {
+          "maxFetches": 6,
+          "titleSelector": "h1",
+          "titleAuthoritative": true,
+          "publishedAtRegex": ">((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2},\\s+202\\d)<",
+          "publishedAtAuthoritative": true
+        }
+      },
+      "tier": "T1",
+      "owner_entity_id": "chainlink",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
         "官方",
-        "教程"
+        "预言机",
+        "RWA"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-github-ai",
-      "name": "GitHub Blog · AI & ML",
-      "kind": "rss",
+      "id": "web-consensys",
+      "name": "Consensys Blog",
+      "kind": "web_list",
       "config": {
-        "feedUrl": "https://github.blog/ai-and-ml/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
+          "initialBackfillLimit": 6
+        },
+        "url": "https://consensys.com/blog",
+        "parseMode": "html",
+        "itemSelector": "div.article-preview",
+        "linkSelector": "a[href^='/blog/']",
+        "titleSelector": "h3, h2, h4",
+        "allowUrlPrefixes": [
+          "https://consensys.com/blog/"
+        ],
+        "publishedAtUtcOffset": "+00:00",
+        "detail": {
+          "maxFetches": 5,
+          "publishedAtSelector": "time, [class*='date']",
+          "titleAuthoritative": true
         }
       },
       "tier": "T1",
-      "owner_entity_id": null,
+      "owner_entity_id": "ethereum",
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
-        "官方"
+        "官方",
+        "以太坊",
+        "钱包/账户抽象"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-mistral",
-      "name": "Mistral AI",
-      "kind": "rss",
+      "id": "web-optimism-blog",
+      "name": "Optimism Blog",
+      "kind": "web_list",
       "config": {
-        "feedUrl": "https://mistral.ai/news/rss",
         "_aihot": {
-          "initialBackfillLimit": 8
+          "initialBackfillLimit": 6
+        },
+        "url": "https://optimism.io/blog",
+        "parseMode": "html",
+        "itemSelector": "a[href^='/blog/']",
+        "linkSelector": "a",
+        "titleSelector": "p:nth-of-type(2), h2, h3, h1",
+        "allowUrlPrefixes": [
+          "https://optimism.io/blog/"
+        ],
+        "publishedAtUtcOffset": "+00:00",
+        "detail": {
+          "maxFetches": 6,
+          "titleSelector": "h1",
+          "titleAuthoritative": true
         }
       },
       "tier": "T1",
-      "owner_entity_id": null,
+      "owner_entity_id": "optimism",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "web-paradigm-research",
+      "name": "Paradigm Research",
+      "kind": "web_list",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "url": "https://www.paradigm.xyz/writing",
+        "parseMode": "html",
+        "itemSelector": "ul li.item",
+        "linkSelector": "a",
+        "titleSelector": "h2.title",
+        "publishedAtSelector": "span.date-short",
+        "publishedAtUtcOffset": "+00:00",
+        "allowUrlPrefixes": [
+          "https://www.paradigm.xyz/writing/"
+        ]
+      },
+      "tier": "T1",
+      "owner_entity_id": "paradigm",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "投研",
+        "密码学"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-a16z-crypto",
+      "name": "a16z crypto",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://a16zcrypto.com/feed/"
+      },
+      "tier": "T1",
+      "owner_entity_id": "a16z-crypto",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "机构",
+        "投研"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-aave-blog",
+      "name": "Aave Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://aave.com/blog/rss.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": "aave",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "DeFi",
+        "借贷"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-arbitrum-blog",
+      "name": "Arbitrum Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://blog.arbitrum.io/rss/"
+      },
+      "tier": "T1",
+      "owner_entity_id": "arbitrum",
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
-        "官方"
+        "官方",
+        "Layer2"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-bair",
-      "name": "Berkeley AI Research",
+      "id": "rss-arthur-hayes",
+      "name": "Arthur Hayes (Substack)",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://bair.berkeley.edu/blog/feed.xml",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 5
+        },
+        "feedUrl": "https://cryptohayes.substack.com/feed"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "大佬观点",
+        "宏观"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-base-blog",
+      "name": "Base Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://www.base.org/blog/rss.xml"
       },
       "tier": "T1",
+      "owner_entity_id": "coinbase",
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-bitcoin-optech",
+      "name": "Bitcoin Optech",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://bitcoinops.org/feed.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bitcoin",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "一手",
+        "Bitcoin",
+        "协议升级"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-bitcoincore",
+      "name": "Bitcoin Core",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 5
+        },
+        "feedUrl": "https://bitcoincore.org/en/rss.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bitcoin",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "官方",
+        "Bitcoin",
+        "协议升级"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-blocktempo",
+      "name": "动区动趋 BlockTempo",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 12
+        },
+        "feedUrl": "https://www.blocktempo.com/feed/"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 45,
+      "tags": [
+        "媒体",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-blockworks",
+      "name": "Blockworks",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://blockworks.co/feed"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "宏观",
+        "机构"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-celestia-blog",
+      "name": "Celestia Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://blog.celestia.org/rss/"
+      },
+      "tier": "T1",
+      "owner_entity_id": "celestia",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "官方",
+        "模块化区块链"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-certik",
+      "name": "CertiK Security Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "feedUrl": "https://www.certik.com/blog/rss.xml"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "certik",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "安全",
+        "审计"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-chainalysis",
+      "name": "Chainalysis Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://www.chainalysis.com/blog/feed/"
+      },
+      "tier": "T1_5",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
       "tags": [
-        "研究"
+        "安全",
+        "链上取证",
+        "政策/监管"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-the-verge-ai",
-      "name": "The Verge · AI",
+      "id": "rss-chainfeeds",
+      "name": "ChainFeeds",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
         "_aihot": {
           "initialBackfillLimit": 8
-        }
+        },
+        "feedUrl": "https://chainfeeds.substack.com/feed"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "媒体",
+        "精选",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-coindesk",
+      "name": "CoinDesk",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://feeds.feedburner.com/CoinDesk"
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
-      "interval_minutes": 60,
+      "interval_minutes": 30,
       "tags": [
-        "媒体"
+        "媒体",
+        "行业"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-techcrunch-ai",
-      "name": "TechCrunch · AI",
+      "id": "rss-cointelegraph",
+      "name": "Cointelegraph",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://cointelegraph.com/rss"
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
-      "interval_minutes": 60,
+      "interval_minutes": 30,
       "tags": [
-        "媒体"
+        "媒体",
+        "综合"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-ars-technica-ai",
-      "name": "Ars Technica · AI",
+      "id": "rss-cryptobriefing",
+      "name": "Crypto Briefing",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://arstechnica.com/ai/feed/",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 12
+        },
+        "feedUrl": "https://cryptobriefing.com/feed/"
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
-      "interval_minutes": 60,
+      "interval_minutes": 45,
       "tags": [
-        "媒体"
+        "媒体",
+        "英文"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-mit-tech-review-ai",
-      "name": "MIT Technology Review · AI",
+      "id": "rss-decrypt",
+      "name": "Decrypt",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://decrypt.co/feed"
       },
       "tier": "T2",
       "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "英文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-dlnews",
+      "name": "DL News",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://www.dlnews.com/arc/outboundfeeds/rss/"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 45,
+      "tags": [
+        "媒体",
+        "DeFi",
+        "政策/监管"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-eigenlayer-blog",
+      "name": "EigenLabs Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://www.eigenlabs.org/blog/rss/"
+      },
+      "tier": "T1",
+      "owner_entity_id": "eigenlayer",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "Restaking"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-ethereum-blog",
+      "name": "Ethereum Foundation Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "feedUrl": "https://blog.ethereum.org/feed.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ethereum",
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
-        "媒体"
+        "官方",
+        "以太坊"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-the-decoder",
-      "name": "The Decoder",
+      "id": "rss-ethresearch",
+      "name": "Ethereum Research (ethresear.ch)",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://the-decoder.com/feed/",
         "_aihot": {
           "initialBackfillLimit": 8
-        }
+        },
+        "feedUrl": "https://ethresear.ch/latest.rss"
       },
-      "tier": "T2",
-      "owner_entity_id": null,
-      "participation_mode": "editorial",
-      "interval_minutes": 60,
-      "tags": [
-        "媒体"
-      ],
-      "site_fulltext": false,
-      "syndicate_fulltext": false
-    },
-    {
-      "id": "rss-simon-willison",
-      "name": "Simon Willison",
-      "kind": "rss",
-      "config": {
-        "feedUrl": "https://simonwillison.net/atom/everything/",
-        "_aihot": {
-          "initialBackfillLimit": 8
-        }
-      },
-      "tier": "T2",
-      "owner_entity_id": null,
+      "tier": "T1",
+      "owner_entity_id": "ethereum",
       "participation_mode": "editorial",
       "interval_minutes": 120,
       "tags": [
-        "个人"
+        "一手",
+        "以太坊",
+        "研报/研究"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-import-ai",
-      "name": "Import AI",
+      "id": "rss-flashbots",
+      "name": "Flashbots Writings",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://importai.substack.com/feed",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://writings.flashbots.net/rss.xml"
       },
-      "tier": "T2",
+      "tier": "T1",
+      "owner_entity_id": "flashbots",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "一手",
+        "MEV",
+        "研报/研究"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-glassnode-insights",
+      "name": "Glassnode Insights",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://insights.glassnode.com/rss/"
+      },
+      "tier": "T1_5",
       "owner_entity_id": null,
       "participation_mode": "editorial",
       "interval_minutes": 180,
       "tags": [
-        "个人",
-        "周刊"
+        "链上数据",
+        "研报/研究"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
     },
     {
-      "id": "rss-latent-space",
-      "name": "Latent Space",
+      "id": "rss-lido-blog",
+      "name": "Lido Finance Blog",
       "kind": "rss",
       "config": {
-        "feedUrl": "https://www.latent.space/feed",
         "_aihot": {
-          "initialBackfillLimit": 8
-        }
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://blog.lido.fi/rss/"
+      },
+      "tier": "T1",
+      "owner_entity_id": "lido",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "官方",
+        "DeFi",
+        "以太坊"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-lopp",
+      "name": "Jameson Lopp",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 5
+        },
+        "feedUrl": "https://blog.lopp.net/rss/"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "bitcoin",
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "安全",
+        "Bitcoin",
+        "研报/研究"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-multicoin",
+      "name": "Multicoin Capital",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://multicoin.capital/rss.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "投研",
+        "VC",
+        "深度"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-odaily",
+      "name": "Odaily 星球日报 (深度)",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "feedUrl": "https://rss.odaily.news/rss/post"
       },
       "tier": "T2",
       "owner_entity_id": null,
       "participation_mode": "editorial",
-      "interval_minutes": 180,
+      "interval_minutes": 30,
       "tags": [
-        "个人"
+        "媒体",
+        "深度",
+        "中文"
       ],
       "site_fulltext": false,
-      "syndicate_fulltext": false
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-odaily-flash",
+      "name": "Odaily 星球日报快讯",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://rss.odaily.news/rss/newsflash"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "快讯",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-openzeppelin",
+      "name": "OpenZeppelin Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://blog.openzeppelin.com/rss.xml"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "安全",
+        "智能合约",
+        "教程/实践"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-panews",
+      "name": "PANews",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://www.panewslab.com/rss.xml?lang=zh"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-protos",
+      "name": "Protos",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "feedUrl": "https://protos.com/feed/"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "媒体",
+        "调查",
+        "英文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-slowmist",
+      "name": "SlowMist 慢雾科技",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "feedUrl": "https://slowmist.medium.com/feed"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "slowmist",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "安全",
+        "预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-sui-blog",
+      "name": "Sui Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://www.sui.io/blog/rss.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": "sui",
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "Sui/Move"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-techflow",
+      "name": "深潮 TechFlow",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 15
+        },
+        "feedUrl": "https://techflowpost.substack.com/feed"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "深度"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-the-defiant",
+      "name": "The Defiant",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 12
+        },
+        "feedUrl": "https://thedefiant.io/api/feed"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 45,
+      "tags": [
+        "媒体",
+        "DeFi",
+        "英文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-trailofbits",
+      "name": "Trail of Bits Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://blog.trailofbits.com/feed/"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "安全",
+        "审计",
+        "研报/研究"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-trm-labs",
+      "name": "TRM Labs Insights",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://www.trmlabs.com/resources/blog/rss.xml"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "安全",
+        "链上取证",
+        "合规"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-unchained",
+      "name": "Unchained Crypto",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 12
+        },
+        "feedUrl": "https://unchainedcrypto.com/feed/"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 45,
+      "tags": [
+        "媒体",
+        "深度",
+        "访谈"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-variant",
+      "name": "Variant Fund",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://newsletter.variant.fund/feed"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 240,
+      "tags": [
+        "投研",
+        "VC"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-vitalik-blog",
+      "name": "Vitalik Buterin Blog",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 5
+        },
+        "feedUrl": "https://vitalik.eth.limo/feed.xml"
+      },
+      "tier": "T1",
+      "owner_entity_id": "vitalik",
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "一手",
+        "思考"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-wublock",
+      "name": "吴说区块链 (Substack)",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "feedUrl": "https://wublock.substack.com/feed"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "媒体",
+        "深度",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "rss-zellic",
+      "name": "Zellic Research",
+      "kind": "rss",
+      "config": {
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "feedUrl": "https://www.zellic.io/blog/rss.xml"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 180,
+      "tags": [
+        "安全",
+        "审计",
+        "研报/研究"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-0xngmi",
+      "name": "X：0xngmi / DefiLlama (@0xngmi)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:0xngmi -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "创始人",
+        "DeFi",
+        "链上数据"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-aave",
+      "name": "X：Aave (@aave)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:aave -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "aave",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "DeFi",
+        "借贷"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-aptos",
+      "name": "X：Aptos (@Aptos)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Aptos -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "aptos",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "Sui/Move"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-arbitrum",
+      "name": "X：Arbitrum (@arbitrum)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:arbitrum -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "arbitrum",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-arkham",
+      "name": "X：Arkham (@arkham)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:arkham -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 45,
+      "tags": [
+        "链上数据",
+        "巨鲸动向"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-arweave",
+      "name": "X：Arweave Ecosystem (@ArweaveEco)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:ArweaveEco -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "DePIN",
+        "AI+Crypto"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-avax",
+      "name": "X：Avalanche (@avax)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:avax -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "公链"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-balchunas",
+      "name": "X：Eric Balchunas 彭博ETF分析师 (@EricBalchunas)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:EricBalchunas -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "ETF",
+        "政策/监管",
+        "宏观"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-base",
+      "name": "X：Base (@base)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:base -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "coinbase",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-berachain",
+      "name": "X：Berachain (@berachain)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:berachain -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "公链"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-binance",
+      "name": "X：Binance (@binance)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:binance -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "binance",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "交易所"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-binance-research",
+      "name": "X：Binance Research (@BinanceResearch)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:BinanceResearch -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "binance",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "投研",
+        "研报"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-bittensor",
+      "name": "X：Bittensor (@opentensor)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:opentensor -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "AI+Crypto"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-blockbeats",
+      "name": "X：律动 BlockBeats (@BlockBeatsAsia)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:BlockBeatsAsia -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "快讯",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-blocksec",
+      "name": "X：BlockSec (@BlockSecTeam)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:BlockSecTeam -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "安全",
+        "预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-blockstream",
+      "name": "X：Blockstream (@Blockstream)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Blockstream -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "bitcoin",
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "Bitcoin",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-brian-armstrong",
+      "name": "X：Brian Armstrong (@brian_armstrong)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:brian_armstrong -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "coinbase",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "创始人",
+        "政策/监管",
+        "Coinbase"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-chainlink",
+      "name": "X：Chainlink (@chainlink)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:chainlink -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "chainlink",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "预言机",
+        "RWA"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-circle",
+      "name": "X：Circle (@circle)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:circle -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "circle",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "稳定币"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-coinbase",
+      "name": "X：Coinbase (@coinbase)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:coinbase -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "coinbase",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "交易所"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-coincenter",
+      "name": "X：Coin Center (@coincenter)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:coincenter -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "政策/监管",
+        "智库"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-coindesk",
+      "name": "X：CoinDesk (@CoinDesk)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:CoinDesk -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "行业"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-cosmos",
+      "name": "X：Cosmos (@cosmos)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:cosmos -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "跨链"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-curve",
+      "name": "X：Curve Finance (@CurveFinance)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:CurveFinance -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "curve",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "DeFi",
+        "DEX"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-cyvers",
+      "name": "X：Cyvers Alerts (@CyversAlerts)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:CyversAlerts -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "安全",
+        "预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-cz",
+      "name": "X：CZ 赵长鹏 (@cz_binance)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:cz_binance -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "binance",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "大佬观点",
+        "币安"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-defillama",
+      "name": "X：DefiLlama (@DefiLlama)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:DefiLlama -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "数据",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-delphi",
+      "name": "X：Delphi Digital (@Delphi_Digital)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Delphi_Digital -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "投研",
+        "深度"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-dune",
+      "name": "X：Dune (@Dune)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Dune -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "链上数据",
+        "分析"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-eleanor",
+      "name": "X：Eleanor Terrett 加密监管记者 (@EleanorTerrett)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:EleanorTerrett -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "政策/监管",
+        "SEC"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-ethereum",
+      "name": "X：Ethereum Foundation (@ethereum)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:ethereum -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ethereum",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "以太坊"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-evilcos",
+      "name": "X：余弦 SlowMist (@evilcos)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:evilcos -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "slowmist",
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "安全",
+        "分析"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-filecoin",
+      "name": "X：Filecoin (@Filecoin)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Filecoin -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "DePIN"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-foresight-news",
+      "name": "X：Foresight News (@Foresight_News)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Foresight_News -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "快讯",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-glassnode",
+      "name": "X：Glassnode (@glassnode)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:glassnode -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "链上数据",
+        "研报"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-haseeb",
+      "name": "X：Haseeb Qureshi / Dragonfly (@hosseeb)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:hosseeb -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "投研",
+        "VC",
+        "大佬观点"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-hasu",
+      "name": "X：Hasu / Flashbots (@hasufl)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:hasufl -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "flashbots",
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "大佬观点",
+        "MEV",
+        "以太坊"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-hayden",
+      "name": "X：Hayden Adams (@haydenzadams)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:haydenzadams -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "uniswap",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "创始人",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-helium",
+      "name": "X：Helium (@helium)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:helium -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "DePIN"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-hyperliquid",
+      "name": "X：Hyperliquid (@HyperliquidX)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:HyperliquidX -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "hyperliquid",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "链上衍生品",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-immunefi",
+      "name": "X：Immunefi (@immunefi)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:immunefi -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "安全",
+        "漏洞赏金"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-ionet",
+      "name": "X：io.net (@ionet)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:ionet -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "DePIN",
+        "AI+Crypto"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-jessepollak",
+      "name": "X：Jesse Pollak / Base (@jessepollak)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:jessepollak -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "coinbase",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "创始人",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-jupiter",
+      "name": "X：Jupiter (@JupiterExchange)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:JupiterExchange -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "Solana",
+        "DEX"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-kraken",
+      "name": "X：Kraken (@krakenfx)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:krakenfx -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "交易所",
+        "合规"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-ledger",
+      "name": "X：Ledger (@Ledger)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Ledger -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "安全",
+        "硬件钱包"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-lido",
+      "name": "X：Lido Finance (@LidoFinance)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:LidoFinance -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "lido",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "DeFi",
+        "以太坊"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-lookonchain",
+      "name": "X：Lookonchain (@lookonchain)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:lookonchain -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "链上数据",
+        "聪明钱"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-messari",
+      "name": "X：Messari (@MessariCrypto)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:MessariCrypto -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "投研",
+        "研报"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-metamask",
+      "name": "X：MetaMask (@MetaMask)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:MetaMask -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "钱包/账户抽象"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-monad",
+      "name": "X：Monad (@monad_xyz)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:monad_xyz -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "并行EVM"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-nansen",
+      "name": "X：Nansen (@nansen_ai)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:nansen_ai -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "链上数据",
+        "投研"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-near",
+      "name": "X：NEAR Protocol (@NEARProtocol)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:NEARProtocol -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "AI+Crypto"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-odaily",
+      "name": "X：Odaily 星球日报 (@OdailyChina)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:OdailyChina -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "快讯",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-okx",
+      "name": "X：OKX (@okx)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:okx -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "okx",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "交易所"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-ondo",
+      "name": "X：Ondo Finance (@Ondo)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Ondo -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "RWA",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-optimism",
+      "name": "X：Optimism (@Optimism)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Optimism -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "optimism",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-panews",
+      "name": "X：PANews (@PANewsCN)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:PANewsCN -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-paoloardoino",
+      "name": "X：Paolo Ardoino / Tether (@paoloardoino)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:paoloardoino -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "tether",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "稳定币",
+        "创始人"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-paradigm",
+      "name": "X：Paradigm (@paradigm)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:paradigm -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "paradigm",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "投研",
+        "密码学"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-peckshield",
+      "name": "X：PeckShield 派盾预警 (@PeckShieldAlert)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:PeckShieldAlert -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "peckshield",
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "安全",
+        "预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-pendle",
+      "name": "X：Pendle (@pendle_fi)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:pendle_fi -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "pendle",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-phantom",
+      "name": "X：Phantom (@phantom)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:phantom -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "钱包/账户抽象",
+        "Solana"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-polygon",
+      "name": "X：Polygon (@0xPolygon)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:0xPolygon -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "polygon",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "Layer2",
+        "ZK/零知识证明"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-polymarket",
+      "name": "X：Polymarket (@Polymarket)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Polymarket -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "polymarket",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "预测市场"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-rendernetwork",
+      "name": "X：Render Network (@rendernetwork)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:rendernetwork -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "DePIN",
+        "AI+Crypto"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-route2fi",
+      "name": "X：Route 2 FI (@Route2FI)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Route2FI -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "DeFi",
+        "投研"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-saylor",
+      "name": "X：Michael Saylor (@saylor)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:saylor -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "bitcoin",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "Bitcoin",
+        "机构",
+        "大佬观点"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-scamsniffer",
+      "name": "X：Scam Sniffer (@realScamSniffer)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:realScamSniffer -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "安全",
+        "钓鱼预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-scroll",
+      "name": "X：Scroll (@Scroll_ZKP)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Scroll_ZKP -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "ZK/零知识证明",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-securitize",
+      "name": "X：Securitize (@Securitize)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Securitize -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "RWA",
+        "机构"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-seyffart",
+      "name": "X：James Seyffart 彭博ETF分析师 (@JSeyff)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:JSeyff -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "ETF",
+        "政策/监管"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-sky",
+      "name": "X：Sky / MakerDAO (@SkyEcosystem)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:SkyEcosystem -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "makerdao",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "稳定币",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-slowmist",
+      "name": "X：SlowMist 慢雾科技 (@SlowMist_Team)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:SlowMist_Team -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 8
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "slowmist",
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "安全",
+        "预警"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-solana",
+      "name": "X：Solana (@solana)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:solana -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "solana",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "Solana"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-solana-foundation",
+      "name": "X：Solana Foundation (@SolanaFndn)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:SolanaFndn -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "solana",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "Solana"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-sreeramkannan",
+      "name": "X：Sreeram Kannan / EigenLayer (@sreeramkannan)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:sreeramkannan -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "eigenlayer",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "创始人",
+        "Restaking"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-stani",
+      "name": "X：Stani Kulechov (@StaniKulechov)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:StaniKulechov -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": "aave",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "创始人",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-starknet",
+      "name": "X：Starknet (@Starknet)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Starknet -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "starknet",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "ZK/零知识证明",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-sui",
+      "name": "X：Sui Network (@SuiNetwork)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:SuiNetwork -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "sui",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "Sui/Move"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-techflow",
+      "name": "X：深潮 TechFlow (@TechFlowPost)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:TechFlowPost -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T2",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "深度",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-ton",
+      "name": "X：TON (@ton_blockchain)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:ton_blockchain -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "ton",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "TON"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-uniswap",
+      "name": "X：Uniswap Labs (@Uniswap)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:Uniswap -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "uniswap",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "官方",
+        "DeFi"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-virtuals",
+      "name": "X：Virtuals Protocol (@virtuals_io)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:virtuals_io -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 120,
+      "tags": [
+        "官方",
+        "AI+Crypto"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-vitalik",
+      "name": "X：Vitalik Buterin (@VitalikButerin)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:VitalikButerin -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "vitalik",
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "一手",
+        "以太坊",
+        "思考"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-wublockchain",
+      "name": "X：吴说区块链 (@WuBlockchain)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:WuBlockchain -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 10
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 30,
+      "tags": [
+        "媒体",
+        "独家",
+        "中文"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-zachxbt",
+      "name": "X：ZachXBT (@zachxbt)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:zachxbt -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1_5",
+      "owner_entity_id": null,
+      "participation_mode": "editorial",
+      "interval_minutes": 60,
+      "tags": [
+        "安全",
+        "链上调查"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
+    },
+    {
+      "id": "x-zksync",
+      "name": "X：ZKsync (@zksync)",
+      "kind": "x_search",
+      "config": {
+        "query": "from:zksync -filter:replies",
+        "_aihot": {
+          "initialBackfillLimit": 6
+        },
+        "searchType": "Latest"
+      },
+      "tier": "T1",
+      "owner_entity_id": "zksync",
+      "participation_mode": "editorial",
+      "interval_minutes": 90,
+      "tags": [
+        "官方",
+        "ZK/零知识证明",
+        "Layer2"
+      ],
+      "site_fulltext": false,
+      "syndicate_fulltext": false,
+      "enabled": true
     }
   ]
 }

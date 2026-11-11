@@ -10,6 +10,8 @@ import { getBoss, stopBoss } from "@aihot/backend/jobs/queue";
 import { publishArticle } from "@aihot/backend/publication/publish";
 import { selectedContent } from "@aihot/backend/notify/selected-content";
 import { buildApp } from "../apps/api/src/app.ts";
+import { installModules } from "@aihot/backend/modules";
+import mainSite from "../modules/main-site/server.ts";
 
 const T = tag();
 const SOURCE = `news-gate-${T}`;
@@ -28,7 +30,7 @@ async function candidate(name: string) {
   const { articleId } = await upsertMaterial({ sourceId: SOURCE, url: `https://example.org/${T}/${name}`,
     title: `${T} ${name}`, bodyText: 'A new public result with evidence.', bodyStatus: 'ok', via: 'fetch', publishedAt: new Date() });
   await sql`INSERT INTO analyses(article_id,input_revision,origin,relevance,category,title_zh,summary_zh,reason_zh,score,selected)
-    VALUES (${articleId},1,'rule','pass','ai-models',${`新闻 ${T} ${name}`},'有证据的新结果','推荐理由',90,true)`;
+    VALUES (${articleId},1,'rule','pass','l1-l2',${`新闻 ${T} ${name}`},'有证据的新结果','推荐理由',90,true)`;
   return articleId;
 }
 const read = async (path: string) => (await app.inject({ method: 'GET', url: path })).body;
@@ -72,4 +74,28 @@ test('a confirmed but redundant explanation stays in all, and an editor can expl
   await publishArticle(id);
   mock.timers.tick(5_100);
   assert.ok((await read('/api/site/timeline?limit=40')).includes(id));
+});
+
+test('only explicitly trusted editorial sources retain upstream selection; T1 and similar IDs do not', async () => {
+  installModules([mainSite]);
+  try {
+    for (const sourceId of ['feixiaohao-flash', 'feixiaohao-article', `feixiaohao-other-${T}`, `${SOURCE}-first-party`]) {
+      await sql`INSERT INTO sources(id,name,kind,tier,first_party,owner_entity_id,participation_mode,next_fetch_at)
+        VALUES (${sourceId},${sourceId},'json_list','T1',true,'feixiaohao','editorial','2100-01-01')`;
+      const { articleId } = await upsertMaterial({ sourceId, url: `https://example.org/${sourceId}`, title: `人工编辑内容 ${sourceId}`,
+        bodyText: '完整的人工编辑正文。', bodyStatus: 'ok', via: 'fetch', publishedAt: new Date() });
+      await sql`INSERT INTO analyses(article_id,input_revision,origin,relevance,title_zh,summary_zh,selected,score)
+        VALUES (${articleId},1,'rule','pass','人工编辑标题','人工编辑摘要',false,35)`;
+      await sql`UPDATE articles SET grouping_status='pending',selection_adds_value=false WHERE id=${articleId}`;
+      await publishArticle(articleId);
+      const [p] = await sql`SELECT selected,score FROM publications WHERE article_id=${articleId}`;
+      assert.equal(p.selected, sourceId === 'feixiaohao-flash' || sourceId === 'feixiaohao-article', sourceId);
+      assert.equal(Number(p.score), 35, 'trust does not invent a model score');
+      if (p.selected) {
+        await sql`INSERT INTO editorial_overrides(article_id,fields,reason,updated_by) VALUES (${articleId},'{"selected":false}','editor deselected','test')`;
+        await publishArticle(articleId);
+        assert.equal((await sql`SELECT selected FROM publications WHERE article_id=${articleId}`)[0].selected, false);
+      }
+    }
+  } finally { installModules([]); }
 });
