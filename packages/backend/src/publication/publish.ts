@@ -301,7 +301,7 @@ export async function publishArticleTx(tx: Tx, articleId: string, options: Publi
   // A historical import already has its public decision. Preserve that confirmed state on rebuild.
   const selected = selectionCandidate && (article.grouping_status === "complete" || isOfficial)
     && (f.selected === true || isOfficial || article.selection_adds_value !== false);
-  const reason = selected ? pickString(f.reason, original ? null : (analysis?.reason_zh ?? (isOfficial ? "来源编辑已选定发布" : null))) : null;
+  const reason = selected ? pickString(f.reason, original ? null : (analysis?.reason_zh ?? null)) : null;
   const hasXPost = !!article.x_post;
   const channel = channelOf(source.kind, hasXPost);
   const hasBody = !!article.body_text || !!article.x_post?.text || !!article.x_post?.media?.length || !!article.x_post?.quoted?.text;

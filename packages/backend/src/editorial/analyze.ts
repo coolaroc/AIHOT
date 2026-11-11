@@ -32,6 +32,7 @@ import {
 import { CATEGORY_GUIDE, CATEGORY_TAGS, ENTITIES, ENTITY_TAGS, ITEM_TYPES, normalizeTags, TOPIC_TAGS } from "./vocabulary.ts";
 import { promptText, promptVersion } from "./prompts.ts";
 import { originalPostCopy } from "../content/posts.ts";
+import { isOfficialEditorialSource } from "../publication/rules.ts";
 import { wordingProblems } from "./wording.ts";
 
 export { buildMaterial, loadAnalyzeInput, type AnalyzeInputArticle };
@@ -489,7 +490,9 @@ export async function runAnalysis(a: AnalyzeInputArticle, opts: StepOpts = {}): 
   try {
     const scores = await runSelectionScores(a, opts);
     const sum = scoreSum(scores);
-    const near = scoresSelect(scores) || (sum !== null && sum > UNDERSTAND_FLOOR * SCORE_CALLS);
+    // Trusted official editorial sources still enter 精选 directly, so generate real AI copy and reason via understand regardless of score.
+    const officialEditorial = isOfficialEditorialSource({ id: a.source.id ?? "", participation_mode: a.source.participationMode ?? "" });
+    const near = officialEditorial || scoresSelect(scores) || (sum !== null && sum > UNDERSTAND_FLOOR * SCORE_CALLS);
     const s = await structure;
     if ("error" in s) throw s.error;
     // Writing checks the material itself and is never handed the structure's fact: given those

@@ -88,10 +88,14 @@ test('only explicitly trusted editorial sources retain upstream selection; T1 an
         VALUES (${articleId},1,'rule','pass','人工编辑标题','人工编辑摘要',false,35)`;
       await sql`UPDATE articles SET grouping_status='pending',selection_adds_value=false WHERE id=${articleId}`;
       await publishArticle(articleId);
-      const [p] = await sql`SELECT selected,score FROM publications WHERE article_id=${articleId}`;
+      const [p] = await sql`SELECT selected,score,reason FROM publications WHERE article_id=${articleId}`;
       assert.equal(p.selected, sourceId === 'feixiaohao-flash' || sourceId === 'feixiaohao-article', sourceId);
       assert.equal(Number(p.score), 35, 'trust does not invent a model score');
+      assert.equal(p.reason, null, 'missing AI reason stays null rather than showing canned placeholder text');
       if (p.selected) {
+        await sql`UPDATE analyses SET reason_zh='模型生成的核心阅读价值' WHERE article_id=${articleId}`;
+        await publishArticle(articleId);
+        assert.equal((await sql`SELECT reason FROM publications WHERE article_id=${articleId}`)[0].reason, '模型生成的核心阅读价值');
         await sql`INSERT INTO editorial_overrides(article_id,fields,reason,updated_by) VALUES (${articleId},'{"selected":false}','editor deselected','test')`;
         await publishArticle(articleId);
         assert.equal((await sql`SELECT selected FROM publications WHERE article_id=${articleId}`)[0].selected, false);
